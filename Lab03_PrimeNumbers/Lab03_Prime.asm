@@ -83,8 +83,8 @@ Loop1:
 Loop2:
 ; ============ Add your code below ==============================
 ; solution
-								; Compare i with m (i > n / 2?)
-								; If i > m, the number is prime (branch to True)
+	    CMP     R6, R5         	; Compare i with m (i > n / 2?)
+		BHI     True			; If i > m, the number is prime (branch to True)
                                 ; Caution: are you checking signed or unsigned numbers?
 
 ; ============= End of your code ================================
@@ -93,19 +93,26 @@ Loop2:
         UDIV    R8, R0, R6      ; Divide the number by i (R0 / R6) and store the result in R8
         MUL     R9, R8, R6      ; Multiply the quotient by i and store the result in R9
         CMP     R0, R9          ; Compare the original number with the product (n == int(n / i) * i?)
+        BEQ     False           ; Number is composite (branch to False)
+
+        ; Increment divisor
+        ADD     R6, R6, #1      ; i++
+        B       Loop2           ; Test again
 
 ; ============ Add your code below ==============================
 ; solution
 
+        BNE     False
 
 
+True    MOV     R1, #1          ; Make sure we're storing 1 in the array
+        STRB    R1, [R2], #1  ; Store 1 in Result array if number is prime, iterate ResAddr to point to next value
+        B       Loop1
 
-True
 
-
-
-False
-
+False   MOV     R1, #-1         ; Make sure we're storing -1 in the array :D
+        STRB    R1, [R2], #1 ; Store -1 in Result array if number is comp, iterate ResAddr to point to next value
+        B       Loop1
 
 
 
