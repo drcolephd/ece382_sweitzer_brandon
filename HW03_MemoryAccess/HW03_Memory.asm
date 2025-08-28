@@ -73,7 +73,7 @@ StrAddr .word   str
 main:   .asmfunc                ; begin assembly main function
 
         ; ============== PART 1 ===========================
-        LDR     R0, MsgAddr     ; Load R0 with the address of msg, making R0 a pointer to msg.
+         LDR     R0, MsgAddr     ; Load R0 with the address of msg, making R0 a pointer to msg.
                                 ; Observe the value of R0
                                 ; Enter the value of R0 into Memory Browser to inspect the memory.
         LDR     R1, [R0]        ; Observe the values of R0 & R1

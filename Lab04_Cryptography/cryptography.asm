@@ -61,16 +61,30 @@ Encrypt:   .asmfunc
 ; ============ Add your code and comments below ===================
 
     ; Use EOM defined at line 44 for '#'
+            PUSH    {R4-R7, LR}     ;   Save message in stack for PCS compliance, keep LR on hand when routine finish
+            MOV     R6, R0          ;   Assign R6 as SPAdd
+            MOV     R5, R1          ;   Store key in R5
+            MOV     R7, R2          ;   output
 
+Encrypt_again:
 
+            LDRB   R3, [R6], #1    ;   Load plaintext byte, adv pointer
+            MOV     R4, R3          ;   Save copy for EOM check
+            MOV     R0, R3          ;   Prep plaintext for mask
+            MOV     R1, R5          ;   Prep key for XOR call
+            BL      XOR_bytes
 
+            STRB    R0, [R7], #1    ;   Store encrypted byte, adv pointer
+            LDRB    R2, EOM        ;   Prep EOM check
+            LDRB    R2, [R2]
+            CMP     R4, R2
+            BEQ     Encrypt_finit    ;  If EOM end encryption
 
-    ; You must use the XOR_bytes function for exclusive or!
-    BL XOR_bytes        ; XOR_Bytes
+            B       Encrypt_again
 
+Encrypt_finit:
 
-
-
+            POP     {R4-R7, PC}     ;   clear mem stored in stack, grab PC for return
 
 ; =============== End of your code ================================
     .endasmfunc
@@ -93,15 +107,30 @@ Decrypt:    .asmfunc
 ; ============ Add your code and comments below ===================
 
     ; Use EOM defined at line 44 for '#'
+            PUSH    {R4-R7, LR}     ;   Save msg in stack mem, snatch LR
+            MOV     R6, R0          ;   msgAdd load up
+            MOV     R5, R1          ;   load key
+            MOV     R7, R2          ;   load output add
 
+Decrypt_again:
 
+            LDRB    R3, [R6], #1    ;   Load ciphertext, adv pointer
+            MOV     R0, R3          ;   load current byte
+            MOV     R1, R5          ;   grab le key
+            BL      XOR_bytes       ;   decrypt msg to EOM pops up
 
+            STRB    R0, [R7], #1    ;   store decrypted, adv output pointer
 
-    ; You must use the XOR_bytes function for exclusive or!
-    BL XOR_bytes        ; XOR_Bytes
+            LDRB    R2, EOM        ;   check if siamo finito
+            LDRB    R2, [R2]        ;
+            CMP     R0, R2
+            BEQ     Decrypt_no_more
 
+            B       Decrypt_again
 
+Decrypt_no_more:
 
+            POP     {R4-R7, PC}     ;   clear used stack, prende PC per ritornare
 
 ; =============== End of your code ================================
     .endasmfunc
