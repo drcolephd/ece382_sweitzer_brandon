@@ -93,14 +93,14 @@ Stall   B        Stall          ; Stay here forever and observe the results in M
 fact_iter:  .asmfunc            ; Begin assembly function
 
 ; ============ Add your code and comments below ===================
-                        ; Move R0 to another register so that we can use R0 for return value.
-                        ; Initalize return value; ret = 1
-Loop3                   ; n==0?
-                        ; If equal, done; else, execute the following lines.
-                        ; ret = ret * n
-                        ; n--
-                        ; while(n != 0)
-Exit1                   ; Return
+        MOV     R1, R0                ; Move R0 to another register so that we can use R0 for return value.
+        MOV     R0, #1                ; Initalize return value; ret = 1
+Loop3   CMP     R1, #0                ; n==0?
+        BEQ     Exit1                ; If equal, done; else, execute the following lines.
+        MUL     R0, R0, R1                ; ret = ret * n
+        SUB     R1, R1, #1                ; n--
+        B       Loop3                ; while(n != 0)
+Exit1   BX      LR                ; Return
 ; ============= End of your code ================================
 
         .endasmfunc
@@ -115,12 +115,13 @@ fact_rec:   .asmfunc            ; Begin assembly function
         BX      LR              ; Return
 
 ; ============ Add your code and comments below ===================
-Recur                   ; Preserve registers
-                        ; Save n for later use
-                        ; n-1
-                        ; fact_rec(n-1) for (n-1)!
-                        ; n * fact_rec(n-1)
-                        ; Restore registers and return
+Recur   PUSH    {R0-R1, LR}                ; Preserve registers
+        MOV     R1, R0                ; Save n for later use
+        SUB     R0, R0, #1                ; n-1
+        BL      fact_rec                ; fact_rec(n-1) for (n-1)!
+        MUL     R0, R0, R1                ; n * fact_rec(n-1)
+        POP     {R0-R4, LR}                ; Restore registers and return
+        BX      LR
 ; ============= End of your code ================================
 
         .endasmfunc
