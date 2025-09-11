@@ -84,7 +84,7 @@ void Program8_1(void){
 
     // Contrast value 0xB1 looks good on red SparkFun.
     // Adjust this from 0xA0 (lighter) to 0xCF (darker) if necessary.
-    uint8_t  contrast = 0xB1;
+    uint8_t  contrast = 0xC0;
     Nokia5110_SetContrast(contrast);
     Nokia5110_Clear();
 
@@ -147,15 +147,28 @@ void Program8_3(void) {
         Clock_Delay1ms(100);
 
         // Read the state of the bump switches
-        bump = 0;       // update this line
+        bump = Bump_Read();       // update this line
 
         // Read the alarm activation switch (right-most bump switch, BUMP1)
         // If activated (armed), isArmed is set to true, otherwise false
-        isArmed = 0;    // update this line. Do not use hard-coded numbers.
+
+        if (bump & BUMP1) {
+            isArmed = true;
+        }
+        else {
+            isArmed = false;
+        }
 
         // Read the window switches (BUMP5 and BUMP6)
         // windows is set based on the state of the two left bump switches
-        windows = 0;    // update this line. Do not use hard-coded numbers.
+        windows = bump & (BUMP5 | BUMP6);    // update this line. Do not use hard-coded numbers.
+
+        if (isArmed && (windows != (BUMP5 | BUMP6))) {
+            LED_Toggle();
+        }
+        else {
+            LED_Off();
+        }
 
         // If the alarm is armed and the windows (BUMP5 and BUMP6) are not secure, toggle the LED
         // Otherwise, turn the LED off
@@ -167,7 +180,7 @@ void Program8_3(void) {
 
 
 void main(void){
-    Program8_1();
-    // Program8_2();
-    // Program8_3();
+//    Program8_1();
+//     Program8_2();
+     Program8_3();
 }
