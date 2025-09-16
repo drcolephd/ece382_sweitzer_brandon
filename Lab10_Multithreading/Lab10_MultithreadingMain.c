@@ -96,9 +96,14 @@ void Flash(void) {
     static uint16_t Time_1ms = 0;
 
     // Use Time_1ms to keep the LED light RED for 5 ms and BLUE for 5 ms.
+    Time_1ms = (Time_1ms + 1) % 10;
 
-
-
+    if (Time_1ms < 5) {
+        LaunchPad_RGB(RED);
+    }
+    else {
+        LaunchPad_RGB(BLUE);
+    }
 
     // increment Time_1ms every time this function is executed.
     // if it increments to 10, roll over to 0.
@@ -118,7 +123,7 @@ void Program10_2(void){
 
     // Contrast value 0xB1 looks good on red SparkFun
     // Adjust this from 0xA0 (lighter) to 0xCF (darker) if necessary.
-    uint8_t const contrast = 0xB1;
+    uint8_t const contrast = 0xC0;
     Nokia5110_SetContrast(contrast);
 
     Nokia5110_Clear();
@@ -187,7 +192,7 @@ void Program10_3(void){
 
     // Contrast value 0xB1 looks good on red SparkFun
     // Adjust this from 0xA0 (lighter) to 0xCF (darker) if necessary.
-    uint8_t const contrast = 0xB1;
+    uint8_t const contrast = 0xC0;
     Nokia5110_SetContrast(contrast);
 
     Nokia5110_Clear();
@@ -202,15 +207,19 @@ void Program10_3(void){
     LaunchPad_RGB(MAGENTA);
     uint16_t count;
 
-    //EnableInterrupts();     // uncomment for background thread
+    EnableInterrupts();     // uncomment for background thread
 
     for (int i = 0; i < 1000; i++) {
+        DisableInterrupts(); //critical section to avoid messy
         count = Increment();        // uncomment for foreground thread
+        EnableInterrupts(); //critical section no more
         Clock_Delay1us(1000);
     }
 
     Clock_Delay1ms(1);
+    DisableInterrupts(); //make sure val isn't corrupted while being displayed
     count = Increment();
+    EnableInterrupts();
     Nokia5110_SetCursor2(2,7); Nokia5110_OutUDec(count, 5);
 
     LaunchPad_RGB(CYAN);
@@ -225,7 +234,7 @@ void Program10_3(void){
 void main(void) {
 
     // Program10_1();
-    // Program10_2();
+//     Program10_2();
     Program10_3();
 
 }

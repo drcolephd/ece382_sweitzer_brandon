@@ -366,7 +366,7 @@ void Nokia5110_Init(void) {
     // make P9.3 and P9.6 out (Reset and D/C pins)
     P9->DIR |= 0x48;
 
-    uint8_t const initial_constrat = 0x85;
+    uint8_t const initial_constrat = 0xC0;
     Nokia5110_SetContrast(initial_constrat);
 
 }
@@ -404,7 +404,9 @@ void Nokia5110_OutString(const char* ptr){
 
     // You write this as part of Lab 5
     // You must use Nokia5110_OutChar
-
+    while (*ptr != '\0') {
+        Nokia5110_OutChar(*ptr++);
+    }
 }
 
 
@@ -445,6 +447,14 @@ void Nokia5110_OutUDec(uint32_t n, int min_length){
 
     // Convert the number into a reversed string.
     int count = Nokia_Num2String(n);
+
+//    for (int i = count; i < min_length; i++) {
+//        Nokia5110_OutChar(' ');
+//    }
+
+    for (int i = count; i > 0; i--) {
+        Nokia5110_OutChar(Buffer[i]);
+    }
 }
 
 
@@ -456,8 +466,25 @@ void Nokia5110_OutSDec(int32_t n, int min_length){
     // You are not allowed to use the built-in abs() function.
     uint32_t x = 0;
 
+        if (n < 0) {
+            Nokia5110_OutChar('-');
+            x = (uint32_t)(-(int64_t)n); //make n 64 bit temp so no funny business occurs
+        }
+        else {
+            Nokia5110_OutChar(' ');
+            x = n;
+        }
+
     // Convert the number into a reversed string.
     int count = Nokia_Num2String(x);
+
+//    for (int i = count; i < min_length; i++) {
+//        Nokia5110_OutChar(' ');
+//    }
+
+    for (int i = count; i > 0; i--) {
+        Nokia5110_OutChar(Buffer[i]);
+    }
 
 }
 

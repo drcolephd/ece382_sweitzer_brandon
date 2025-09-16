@@ -61,7 +61,15 @@ void Bump_Init(void){
     // 2) make P4.7-P4.5, P4.3, P4.2, and P4.0 in
     // 3) enable pull resistors on P4.7-P4.5, P4.3, P4.2, and P4.0
     //    P4.7-P4.5, P4.3, P4.2, and P4.0 are pull-up
-  
+    P4->SEL0 &= ~0xED; //GPIO Setup, 0
+    P4->SEL1 &= ~0xED;
+
+    P4->DIR &= ~0xED; //Init as input, 0
+
+    P4->REN |= 0xED; //Pull up
+    P4->OUT |= 0xED; //Resistor and pull-up are 1
+
+    //Pins 1110 1101
 }
 
 
@@ -76,8 +84,20 @@ void Bump_Init(void){
 uint8_t Bump_Read(void) {
     // write this as part of Lab 8
     // 1)read the sensors (which are active low) and convert to active high
+    uint8_t raw = P4->IN;
+    raw = ~raw;
+    uint8_t result = 0;
 
     // 2. Select, shift, combine, and output
-    return 0; // replace this line
+
+    //moving format from 1110 1101 to 00 111111
+    result |= raw & 0x01; //first bump alr bit 1
+    result |= (raw & 0x04) >> 1; //bump 2 shift to bit 2
+    result |= (raw & 0x08) >> 1; //bump 3 over to bit 3
+    result |= (raw & 0x20) >> 2; //bump 5 over to bit 4
+    result |= (raw & 0x40) >> 2; //bump 6 to bit 5
+    result |= (raw & 0x80) >> 2; //bump 7 to bit 6
+
+    return result & 0x3F; //flip bits to active high, send first six bits
 }
 
