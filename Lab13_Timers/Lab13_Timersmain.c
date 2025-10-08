@@ -204,7 +204,32 @@ void MotorController(void){
     uint16_t rightDuty_permil = 0; //0 %
 
 	// Write this for Lab 13
+    if (Timer_10ms == 0) {
+        leftDuty_permil = 400;
+        rightDuty_permil = 400;
+        Motor_Forward(leftDuty_permil, rightDuty_permil);
+    }
+    else if (Timer_10ms == 200) {
+        Motor_Coast();
+    }
+    else if (Timer_10ms == 400) {
+        leftDuty_permil = 250;
+        rightDuty_permil = 250;
+        Motor_Backward(leftDuty_permil, rightDuty_permil);
+    }
+    else if (Timer_10ms == 600) {
+        leftDuty_permil = 200;
+        rightDuty_permil = 200;
+        Motor_TurnLeft(leftDuty_permil, rightDuty_permil);
+    }
+    else if (Timer_10ms == 800) {
+        leftDuty_permil = 200;
+        rightDuty_permil = 200;
+        Motor_TurnRight(leftDuty_permil, rightDuty_permil);
+    }
 
+    Timer_10ms++;
+    Timer_10ms = Timer_10ms % 1000;
 
 }
 
@@ -236,8 +261,8 @@ void Program13_3(void) {
 	// Write this for Lab 13
 
     // Initialize Timer A1 to run MotorController at 100 Hz
-	// const uint16_t period_2us =      ; // T = 5,000 * 2us = 10ms --> 100 Hz
-	// TimerA1_Init(/*pass a function pointer here*/, period_2us);  // 100 Hz
+	const uint16_t period_2us = 5000; // T = 5,000 * 2us = 10ms --> 100 Hz
+	TimerA1_Init(&MotorController, period_2us);  // 100 Hz
 
     // Enable Interrupts
     EnableInterrupts();
@@ -260,7 +285,7 @@ void Program13_3(void) {
 
 }
 int main(void){
-	Program13_1();
-	//Program13_2();
-	//Program13_3();
+//	Program13_1();
+//	Program13_2();
+	Program13_3();
 }

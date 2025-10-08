@@ -404,7 +404,7 @@ void Nokia5110_OutString(const char* ptr){
 
     // You write this as part of Lab 5
     // You must use Nokia5110_OutChar
-    while (*ptr != '\0') {
+    while (*ptr) {
         Nokia5110_OutChar(*ptr++);
     }
 }
@@ -447,12 +447,13 @@ void Nokia5110_OutUDec(uint32_t n, int min_length){
 
     // Convert the number into a reversed string.
     int count = Nokia_Num2String(n);
+    int length = (count > min_length) ? count: min_length;
 
-//    for (int i = count; i < min_length; i++) {
-//        Nokia5110_OutChar(' ');
-//    }
+    for (int i = count; i < min_length; i++) {
+        Nokia5110_OutChar(' ');
+    }
 
-    for (int i = count; i > 0; i--) {
+    for (int i = count-1; i >= 0; i--) {
         Nokia5110_OutChar(Buffer[i]);
     }
 }

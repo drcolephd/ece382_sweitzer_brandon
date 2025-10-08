@@ -67,9 +67,9 @@ void SPIA3_Init(void) {
 
     // write this as part of Lab 11
 
-    /*
+
     // hold the eUSCI module in reset mode
-    EUSCI_A3->CTLW0
+    EUSCI_A3->CTLW0 = 0x01;
 
     // configure UCA3CTLW0 for:
     // bit15      UCCKPH = 1;   data shifts in on first edge, out on following edge
@@ -83,26 +83,26 @@ void SPIA3_Init(void) {
     // bits5-2                  reserved
     // bit1       UCSTEM = 1;   UCSTE pin enables slave
     // bit0       UCSWRST = 1;  reset enabled
-    EUSCI_A3->CTLW0
+    EUSCI_A3->CTLW0 = 0x00C1;
 
     // set the baud rate for the eUSCI which gets its clock from SMCLK
     // Clock_Init48MHz() from ClockSystem.c sets SMCLK = HFXTCLK/4 = 12 MHz
     // if the SMCLK is set to 12 MHz, divide by 3 for 4 MHz baud clock
-    EUSCI_A3->BRW
+    EUSCI_A3->BRW = 104;
 
     // modulation is not used in SPI mode, so clear UCA3MCTLW
-    EUSCI_A3->MCTLW
+    EUSCI_A3->MCTLW &= ~0x0FFF1;
     
     // configure P9.7, P9.5, and P9.4 as primary module function
-    P9->SEL0
-    P9->SEL1
+    P9->SEL0 |= 0x0C;
+    P9->SEL1 &= ~0x0C;
 
     // enable eUSCI module
-    EUSCI_A3->CTLW0
+    EUSCI_A3->CTLW0 &= ~0x0001;
 
     // disable interrupts
-    EUSCI_A3->IE
-    */
+    EUSCI_A3->IE &= ~0x000F;
+
 }
 
 //********SPIA3_Wait4Tx*****************
@@ -112,7 +112,7 @@ void SPIA3_Init(void) {
 void SPIA3_Wait4Tx(void) {
 
     // Wait for transmitter to be empty (UCTXIFG)
-
+    while((EUSCI_A3->IFG & 0x02) == 0);
 }
 
 //********SPIA3_Wait4TxRxReady*****************
@@ -125,7 +125,7 @@ void SPIA3_Wait4TxRxReady(void) {
     // This bit indicates if a transmit or receive operation is in progress.
     // 0b = eUSCI_A inactive
     // 1b = eUSCI_A transmitting or receiving
-    while((EUSCI_A3->STATW & 0x0001));
+    while((EUSCI_A3->STATW & 0x01));
 }
 
 //********SPIA3_WriteTxBuffer****************
@@ -137,7 +137,7 @@ void SPIA3_Wait4TxRxReady(void) {
 void SPIA3_WriteTxBuffer(char data) {
 
     // Send data using TXBUF
-
+    EUSCI_A3->TXBUF = data;
 }
 
 
@@ -150,7 +150,8 @@ void SPIA3_WriteTxBuffer(char data) {
 void SPIA3_OutChar(char data) {
     // 1) Wait for transmitter to be empty (let previous frame finish)
     // 2) Write data to TXBUF, starts SPI
-
+    SPIA3_Wait4Tx();
+    SPIA3_WriteTxBuffer(data);
 }
 
 
@@ -161,5 +162,7 @@ void SPIA3_OutChar(char data) {
 void SPIA3_OutString(const char* ptr){
 
     // you write this as part of Lab 11
-
+    for (int i = 0; ptr[i] != '\0'; i++) {
+        SPIA3_OutChar(ptr[i]);
+    }
 }
