@@ -169,11 +169,13 @@ void LCDOut2(void) {
     // At row 3 and col 6
     // Display the bump data in hex
     // Write your code here.
-
+    Nokia5110_SetCursor2(3,6);
+    Nokia5110_OutU8Hex(BumpData);
     // At row 4 col 6
     // Display the number of collisions in decimal with a fixed length of 5.
     // Write your code here.
-
+    Nokia5110_SetCursor2(4,6);
+    Nokia5110_OutUDec(NumCollisions, 5);
 }
 
 // ===================== Collision2 ==============================
@@ -232,12 +234,12 @@ typedef struct command {
 // 2. Turn right slowly for 1.5 seconds (30% duty cycle)
 // 3. Move forward quickly for 1 second (40% duty cycle)
 // 4. Turn left slowly for 1.5 seconds  (30% duty cycle)
-#define NUM_STEPS   0    // update this line
+#define NUM_STEPS   4    // update this line
 const command_t Control[NUM_STEPS]={
 	{200, 200, &Motor_Backward, 2000},
-	{0,	0, 0,    			0},	// replace this line
-	{0, 0, 0,    			0}, // replace this line
-	{0, 0, 0,    			0}  // replace this line
+	{300, 300, &Motor_TurnRight, 1500},
+	{400, 400, &Motor_Forward, 1000},
+	{300, 300, &Motor_TurnLeft, 1500}
 };
 
 
@@ -253,6 +255,13 @@ uint32_t CurrentStep;   // 0, 1, 2..., NUM-1
 void Controller3(void) {
     // Write this as part of Lab 14
     // Controller should increment the timer (ElapsedTime_ms)
+    ElapsedTime_ms++;
+
+    if (ElapsedTime_ms >= Control[CurrentStep].duration_ms) {
+        ElapsedTime_ms = 0;
+        CurrentStep = ((CurrentStep + 1) % (NUM_STEPS-1));
+        Control[CurrentStep].MotorFunction(Control[CurrentStep].dutyLeft_permil, Control[CurrentStep].dutyRight_permil);
+    }
 
 }
 
@@ -264,6 +273,10 @@ void Controller3(void) {
 void Collision3(uint8_t bumpSensor) {
     // Write this as part of Lab 14
     // Note: After collision, the robot must move backward.
+    Motor_Stop(0,0);
+    CurrentStep = 0;
+    ElapsedTime_ms = 0;
+    Control[CurrentStep].MotorFunction(Control[CurrentStep].dutyLeft_permil, Control[CurrentStep].dutyRight_permil);
 
 }
 
@@ -278,16 +291,17 @@ void Program14_3(void) {
     Motor_Init();
 	// write this as part of Lab 14, Integrated Robotic System
 	// Initialize Bump with the Collision() function you wrote
-
+    BumpInt_Init(&Collision3);
 	// Initialize Timer A1 with the Controller() function you wrote at 1000 Hz
-    uint16_t const period_2us = 0;	// Update this line for T = 1ms
-	
+    uint16_t const period_2us = 500;	// Update this line for T = 1ms
+	TimerA1_Init(&Controller3, period_2us);
 	// Initialize Step to the first command
-
+	CurrentStep = 0;
+	ElapsedTime_ms = 0;
 	// Run the first command
-
+    Control[CurrentStep].MotorFunction(Control[CurrentStep].dutyLeft_permil, Control[CurrentStep].dutyRight_permil);
     // Reset Elapsed Time
-
+	ElapsedTime_ms = 0;
 
     // ================================================
     EnableInterrupts();

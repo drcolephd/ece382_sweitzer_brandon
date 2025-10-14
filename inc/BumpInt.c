@@ -62,22 +62,25 @@ void BumpInt_Init(void(*task)(uint8_t)){
     // write this as part of Lab 14
 	BumpTask = task;
 	// 1. Configure P4.7-P4.5, P4.3, P4.2, and P4.0 as GPIO
-
+	P4->SEL0 &= ~0x00ED;
+	P4->SEL1 &= ~0x00ED;
 	// 2. Make P4.7-P4.5, P4.3, P4.2, and P4.0 input
-
+	P4->DIR &= ~0x00ED;
 	// 3. Enable pull-up resistors on P4.7-P4.5, P4.3, P4.2, and P4.0
-
+	P4->REN |= 0x00ED;
+	P4->OUT |= 0x00ED;
 	// 4. P4.7-P4.5, P4.3, P4.2, and P4.0 are falling edge event
 	//    Set to falling edge events PxIFG flag is set with a high-to-low transition
-
+	P4->IES |= 0x00ED;
 	// 5. Clear all flags (IFG -> no interrupts pending)
-
+	P4->IFG &= ~0x00ED;
     // 6. Enable interrupt on P4.7-P4.5, P4.3, P4.2, and P4.0 (enable IE)
-
+	P4->IE |= 0x00ED;
 	// 7. Setup the Nested Vector Interrupt Controller with priority 1
 	//    Ensure you choose the correct NVIC
     //    Enable IRQ 38 in NVIC
-
+	NVIC->IP[38] = 1 << 5;
+	NVIC->ISER[1] = 1 << 6;
 }
 
 
@@ -92,9 +95,23 @@ void BumpInt_Init(void(*task)(uint8_t)){
 uint8_t BumpInt_Read(void){
 
     // 1. Read the sensors (which are active low) and convert to active high
+    uint8_t raw = P4->IN;
+        raw = ~raw;
+        uint8_t result = 0;
 
+        // 2. Select, shift, combine, and output
+
+        //moving format from 1110 1101 to 00 111111
+        result |= raw & 0x01; //first bump alr bit 1
+        result |= (raw & 0x04) >> 1; //bump 2 shift to bit 2
+        result |= (raw & 0x08) >> 1; //bump 3 over to bit 3
+        result |= (raw & 0x20) >> 2; //bump 5 over to bit 4
+        result |= (raw & 0x40) >> 2; //bump 6 to bit 5
+        result |= (raw & 0x80) >> 2; //bump 7 to bit 6
+
+        return result & 0x3F; //flip bits to active high, send first six bits
     // 2. Select, shift, combine, and output
-    return 0; // replace this line
+
 }
 
 
@@ -104,7 +121,7 @@ void PORT4_IRQHandler(void){
     // write this as part of Lab 14
 
     // clear interrupt flags (No interrupt is pending)
-
+    P4->IFG &= ~0x00ED;
     // Call the user function with the value returned by BumpInt_Read()
     (*BumpTask)(BumpInt_Read());
 }
