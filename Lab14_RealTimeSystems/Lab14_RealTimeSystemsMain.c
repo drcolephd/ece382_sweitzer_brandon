@@ -313,7 +313,7 @@ void Program14_3(void) {
 }
 
 int main(void){
-    Program14_1();
-    //Program14_2();
-    //Program14_3();
+//    Program14_1();
+//    Program14_2();
+    Program14_3();
 }
