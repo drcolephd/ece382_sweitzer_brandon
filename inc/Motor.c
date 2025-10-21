@@ -102,11 +102,6 @@ void Motor_Init(void){
 void Motor_Coast(void){
     // write this as part of Lab 13
     // Note: setting nSleep = 0 and PWM (EN) = 0 makes the robot "coast"
-    // Update left PWM to 0
-    PWM_DutyLeft(0);
-    // Update right PWM to 0
-    PWM_DutyRight(0);
-
     P3->OUT &= ~0x00C0;
 }
 
