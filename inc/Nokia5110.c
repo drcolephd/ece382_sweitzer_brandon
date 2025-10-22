@@ -366,7 +366,7 @@ void Nokia5110_Init(void) {
     // make P9.3 and P9.6 out (Reset and D/C pins)
     P9->DIR |= 0x48;
 
-    uint8_t const initial_constrat = 0xBF;
+    uint8_t const initial_constrat = 0xB0;
     Nokia5110_SetContrast(initial_constrat);
 
 }

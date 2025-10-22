@@ -52,7 +52,7 @@ void ADC0_InitSWTriggerCh17_14_16(void){
 
     // write this for Lab 15
 
-
+    //given values from gradescope :D I can't do hex apparently
     ADC14->CTL0 &= ~0x00000002;
     while(ADC14->CTL0 & 0x00010000);
     ADC14->CTL0 = 0x04220390;

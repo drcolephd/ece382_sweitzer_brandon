@@ -48,7 +48,7 @@
 #include "../inc/Classifier.h"
 
 #define SIDEMIN    212   // smallest side distance to the wall in mm
-#define SIDEMAX    354   // largest side distance to wall in mm
+#define SIDEMAX    415   // largest side distance to wall in mm
 #define CENTERMIN  150   // min distance to the wall in the front
 #define CENTEROPEN 600   // distance to the wall between open/blocked
 #define IRMIN      50    // min possible reading of IR sensor
@@ -71,13 +71,13 @@
 scenario_t Classify(int32_t left_mm, int32_t center_mm, int32_t right_mm) {
 
     scenario_t result = ClassificationError;
-
+    //if anything gets way too close, or is beyond max measurement, send up le error
     if ((left_mm < IRMIN) || (left_mm > IRMAX) || (center_mm < IRMIN) || (center_mm > IRMAX) || (right_mm < IRMIN) || (right_mm > IRMAX)) {
         return result;
     }
 
     uint8_t tooClose = 0;
-
+    //if something is only triggering an individual sensor without being error-worthy, flag as too close
     if (left_mm < SIDEMIN) {
         tooClose |= LeftTooClose;
     }
@@ -91,7 +91,7 @@ scenario_t Classify(int32_t left_mm, int32_t center_mm, int32_t right_mm) {
     if (tooClose) {
         return tooClose;
     }
-
+    //coming up to a turn, use side sensors to determine if a left, right, or u-turn is in order
     if (center_mm < CENTEROPEN) {
         if ((left_mm >= SIDEMAX) && (right_mm >= SIDEMAX)) {
             result += TeeJoint;
@@ -106,7 +106,7 @@ scenario_t Classify(int32_t left_mm, int32_t center_mm, int32_t right_mm) {
             result += Blocked;
         }
     }
-    else {
+    else { //identify corridor shapes, still can go straight but identifies whether left/right turns are available
         if ((left_mm >= SIDEMAX) && (right_mm >= SIDEMAX)) {
             result += CrossRoad;
         }

@@ -56,7 +56,7 @@ policies, either expressed or implied, of the FreeBSD Project.
 #define ADCMAX_LEFT			2000	// Maximum IR ADC value
 #define IRSLOPE_LEFT 		1177404	// Calibration coefficient, m
 #define IROFFSET_LEFT 		610	// Calibration coefficient, c
-#define DIST_OFFSET_LEFT 	40	// Distance from common spot on robot to IR sensor
+#define DIST_OFFSET_LEFT 	-60	// Distance from common spot on robot to IR sensor
 
 // LeftConvert
 // Calculate the distance in mm given the 14-bit ADC value
@@ -81,7 +81,7 @@ uint16_t LeftConvert(uint32_t adc_value){        // returns left distance in mm
 #define ADCMAX_CENTER         2000   // Maximum IR ADC value
 #define IRSLOPE_CENTER        1123412   // Calibration coefficient, m
 #define IROFFSET_CENTER       475   // Calibration coefficient, c
-#define DIST_OFFSET_CENTER    0   // Distance from common spot on robot to IR sensor.
+#define DIST_OFFSET_CENTER    70   // Distance from common spot on robot to IR sensor.
 
 // CenterConvert
 // Calculate the distance in mm given the 14-bit ADC value
@@ -105,7 +105,7 @@ uint16_t CenterConvert(uint32_t adc_value){   // returns center distance in mm
 #define ADCMAX_RIGHT        1800     // Maximum IR ADC value
 #define IRSLOPE_RIGHT       1248465     // Calibration coefficient, m
 #define IROFFSET_RIGHT      336     // Calibration coefficient, c
-#define DIST_OFFSET_RIGHT   40     // Distance from common spot on robot to IR sensor.
+#define DIST_OFFSET_RIGHT   -60     // Distance from common spot on robot to IR sensor.
 
 // RightConvert
 // Calculate the distance in mm given the 14-bit ADC value

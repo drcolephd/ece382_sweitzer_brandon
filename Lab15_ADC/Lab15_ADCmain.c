@@ -285,19 +285,19 @@ void LCDOut4(void){
 
     // At row 3 display the filtered left ADC data and the left distance
         Nokia5110_SetCursor2(3, 3);
-        Nokia5110_OutUDec(FilteredLeft, 3);
-        Nokia5110_OutString(" ");
-        Nokia5110_OutUDec(DistLeft_mm, 3);
+        Nokia5110_OutUDec(FilteredLeft, 5);
+//        Nokia5110_OutString(" ");
+        Nokia5110_OutUDec(DistLeft_mm, 5);
         // At row 4 display the filtered center ADC data and the center distance
         Nokia5110_SetCursor2(4, 3);
-        Nokia5110_OutUDec(FilteredCenter, 3);
-        Nokia5110_OutString(" ");
-        Nokia5110_OutUDec(DistCenter_mm, 3);
+        Nokia5110_OutUDec(FilteredCenter, 5);
+//        Nokia5110_OutString(" ");
+        Nokia5110_OutUDec(DistCenter_mm, 5);
         // At row 5 display the filtered right ADC data and the right distance
         Nokia5110_SetCursor2(5,3);
-        Nokia5110_OutUDec(FilteredRight, 3);
-        Nokia5110_OutString(" ");
-        Nokia5110_OutUDec(DistRight_mm, 3);
+        Nokia5110_OutUDec(FilteredRight, 5);
+//        Nokia5110_OutString(" ");
+        Nokia5110_OutUDec(DistRight_mm, 5);
 
     // At row 6 display the classification.
         Nokia5110_SetCursor2(6,1);
@@ -342,7 +342,7 @@ int Program15_4(void) { // example program 15.1
     ADC_In17_14_16(&raw17,&raw14,&raw16);  // sample
 
     // Initialized Digital Low Pass Filters
-    uint32_t const filterLength = 256; // replace with your choice
+    uint32_t const filterLength = 16; // replace with your choice
     LPF_Init(raw17, filterLength);     // channel 17
     LPF_Init2(raw14, filterLength);    // channel 14
     LPF_Init3(raw16, filterLength);    // channel 16
