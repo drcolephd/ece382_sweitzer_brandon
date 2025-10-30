@@ -158,7 +158,7 @@ void Motor_Forward(uint16_t leftDuty_permil, uint16_t rightDuty_permil){
     // write this as part of Lab 13
 
     // set direction of motors
-    P5->OUT |= 0x0030;
+    P5->OUT &= ~0x0030;
     // update PWMs
     PWM_DutyLeft(leftDuty_permil);
     PWM_DutyRight(rightDuty_permil);
@@ -227,7 +227,7 @@ void Motor_Backward(uint16_t leftDuty_permil, uint16_t rightDuty_permil){
 
     // write this as part of Lab 13
     // set direction of motors
-    P5->OUT &= ~0x0030;
+    P5->OUT |= 0x0030;
     // update PWMs
     PWM_DutyLeft(leftDuty_permil);
     PWM_DutyRight(rightDuty_permil);

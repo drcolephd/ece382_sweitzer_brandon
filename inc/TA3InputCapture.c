@@ -70,39 +70,26 @@ static void (*CaptureTask1)(uint16_t time); // User-defined function to handle i
 void TimerA3Capture_Init(void(*task0)(uint16_t time), void(*task1)(uint16_t time)){
 	// write this as part of lab 16
 
-    /*	
-    CaptureTask0 =  	           // Assign the user function for P10.4 interrupts
-	CaptureTask1 = 	    	       // Assign the user function for P10.5 interrupts
 
-    // Set P10.4 and P10.5 as Timer A3 input capture pins
+    CaptureTask0 = task0;          // user function
+    CaptureTask1 = task1;          // user function
+    P10->SEL0 |= 0x30;
+    P10->SEL1 &= ~0x30;
+    // halt Timer A3
+    TIMER_A3->CTL &= ~0x0030;
+    // or TIMER_A3->CTL = 0; //
+    // SMCLK, input divider /1, TACLR = 0, stop mode,
+    TIMER_A3->CTL = 0x0200; // no friendly
+    TIMER_A3->EX0 = 0x7;
+    TIMER_A3->CCTL[0] = 0x4910;
+    TIMER_A3->CCTL[1] = 0x4910;
+    NVIC->IP[14] = 2 << 5;
+    NVIC->IP[15] = 2 << 5;
+    NVIC->ISER[0] = 0b11 << 14; // or 0x0000C000;
+    TIMER_A3->CTL |= 0x0024; // must be friendly
+    // or TIMER_A3->CTL = 0x0224;
 
-	// Stop Timer A3 while configuring
-	TIMER_A3->CTL
 
-    // Set Timer A3 source to SMCLK (12 MHz),  clock divider /1, and stop mode
-    // interrupt disabled, no interrupt pending
-	TIMER_A3->CTL
-
-    // Set input clock divider to /8
-    TIMER_A3->EX0
-
-    // Configure Timer A3 for rising edge capture on P10.4 and P10.5
-    // synchronous capture source
-    // capture mode, output mode, enable capture/compare interrupt, no interrupt pending
-	TIMER_A3->CCTL[0]
-	TIMER_A3->CCTL[1]
-
-	// Set interrupt priorities for Timer A3
-	NVIC->IP[ ]     // Priority 2 for TA3CCR0 (P10.4)
-	NVIC->IP[ ]     // Priority 2 for TA3CCR1 (P10.5)
-
-	// Enable interrupts for Timer A3 in NVIC
-	NVIC->ISER[ ]   // Enable interrupt 14 and 15
-
-    // Set Timer A3 to continuous mode and reset the timer
-	TIMER_A3->CTL
-
-	*/
 }
 
 
@@ -113,13 +100,13 @@ void TimerA3Capture_Init(void(*task0)(uint16_t time), void(*task1)(uint16_t time
 // Output: none
 void TA3_0_IRQHandler(void){
 	// write this as part of lab 16
-    /*
+
     // Acknowledge the interrupt and clear the flag
-	TIMER_A3->CCTL[ ]
+	TIMER_A3->CCTL[0] &= ~0x0001;
 
     // Call the user function with the timer value
-	(*CaptureTask0)(             );
-    */
+	(*CaptureTask0)(TIMER_A3->CCR[0]);
+
 }
 
 
@@ -130,11 +117,11 @@ void TA3_0_IRQHandler(void){
 // Output: none
 void TA3_N_IRQHandler(void){
     // write this as part of lab 16
-    /*
+
     // Acknowledge the interrupt and clear the flag
-	TIMER_A3->CCTL[ ]
+	TIMER_A3->CCTL[1] &= ~0x0001;
 								 
     // Call the user function with the timer value
-	(*CaptureTask1)(             );
-    */
+	(*CaptureTask1)(TIMER_A3->CCR[1]);
+
 }
