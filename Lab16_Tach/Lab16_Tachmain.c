@@ -652,15 +652,20 @@ command_t ControlCommands[NUM_STATES] = {
 static void LCDClear3(void) {
     Nokia5110_Clear();                  // Clear the entire display
     Nokia5110_OutString("Lab13:Timers"); // Display the lab title
-    Nokia5110_SetCursor2(3,1); Nokia5110_OutString("ST:");  // Show current state
-    Nokia5110_SetCursor2(5, 1); Nokia5110_OutString("D");   // Show distance traveled
+    Nokia5110_SetCursor2(3,1); Nokia5110_OutString("ST: ");  // Show current state
+    Nokia5110_SetCursor2(5, 1); Nokia5110_OutString("D ");   // Show distance traveled
 }
 
 // Update the LCD with the current state and motor data
 static void LCDOut3(void) {
     // Write your code here
-    Nokia5110_SetCursor2(6,1);
+    LCDClear3();
+    Nokia5110_SetCursor2(3,3);
     Nokia5110_OutString(strState[CurrentState]);
+
+    Nokia5110_SetCursor2(5, 2);
+    Nokia5110_OutUDec(LeftDistance_mm, 5);
+    Nokia5110_OutUDec(RightDistance_mm, 5);
 }
 
 // Counter for how many times the controller function has been called
@@ -696,20 +701,20 @@ static void Controller3(void) {
 
                 // Determine next turn based on which bump sensor triggered
                 if (bumpRead & 0x01) {
-                    ControlCommands[LeftTurn].dist_mm =TR60_DIST;
+                    ControlCommands[LeftTurn].dist_mm =TR30_DIST;
                     NextState = LeftTurn;
                 }
                 else if (bumpRead & 0x02) {
-                    ControlCommands[LeftTurn].dist_mm =TR30_DIST;
+                    ControlCommands[LeftTurn].dist_mm =TR60_DIST;
                     NextState = LeftTurn;
 
                 }
                 else if (bumpRead & 0x10) {
-                    ControlCommands[RightTurn].dist_mm = TR30_DIST;
+                    ControlCommands[RightTurn].dist_mm = TR60_DIST;
                     NextState = RightTurn;
                 }
                 else if (bumpRead & 0x20) {
-                    ControlCommands[RightTurn].dist_mm = TR60_DIST;
+                    ControlCommands[RightTurn].dist_mm = TR30_DIST;
                     NextState = RightTurn;
 
                 }
@@ -724,19 +729,19 @@ static void Controller3(void) {
             break;
 
         case Backward:
-            if (LeftDistance_mm <= -1*ControlCommands[Backward].dist_mm) {
+            if (abs(LeftDistance_mm) >= ControlCommands[Backward].dist_mm) {
                 NextState = LeftTurn;
             }
             break;
 
         case LeftTurn:
-            if (RightDistance_mm >= ControlCommands[LeftTurn].dist_mm) {
+            if (abs(RightDistance_mm) >= ControlCommands[LeftTurn].dist_mm) {
                 NextState = Forward;
             }
             break;
 
         case RightTurn:
-            if (LeftDistance_mm >= ControlCommands[RightTurn].dist_mm) {
+            if (abs(LeftDistance_mm) >= ControlCommands[RightTurn].dist_mm) {
                 NextState = Forward;
             }
             break;
@@ -802,7 +807,7 @@ void Program16_3(void) {
 
 
 void main(void){
-    Program16_1();
+//    Program16_1();
     //Program16_2();
-//    Program16_3();
+    Program16_3();
 }
