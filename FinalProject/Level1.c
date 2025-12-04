@@ -286,15 +286,8 @@ command_t ControlCommands[NUM_STATES] = {
 // Clear the LCD and display initial state
 
 
-static void LCDClear3(void) {
+static void LCDClear3 (void) {
     Nokia5110_Clear();
-}
-
-// Update the LCD with the current state and motor data
-
-// This function will be called by ISR
-void Task(void) {
-    LEDOUT ^= 0x01;                 // toggle LED
 }
 
 static void LCDOut3(void) {
@@ -392,7 +385,6 @@ static void Controller3(void) {
         case Stop: {
             NextState = Stop;
             ReachedStop = true;
-            return;
 
         }
         case Forward:
@@ -515,6 +507,24 @@ static void Controller3(void) {
     // Set the current state to the next state for the next iteration
     CurrentState = NextState;
     faceNow = faceNext;
+
+    uint8_t ledTick = 0;
+
+    if (ReachedStop) {
+                ledTick++;
+                if(ledTick >= 25){   // 25 * 20ms = 500ms
+                    ledTick = 0;
+
+                    static uint8_t toggle = 0;
+
+                    if(toggle){
+                        LaunchPad_RGB(RED);
+                    } else {
+                        LaunchPad_RGB(BLUE);
+                    }
+                    toggle ^= 1;
+                }
+            }
 }
 
 void Level1(void) {
@@ -534,7 +544,7 @@ void Level1(void) {
     const uint16_t period_4us = 5000;       // 20 ms period
     TimerA2_Init(&Controller3, period_4us); // Initialize TimerA2
 
-    UpdateParameters();
+//    UpdateParameters();
     TxBuffer();
     LCDClear3();
     Tachometer_ResetSteps();  // Reset tachometer distance measurements
@@ -556,22 +566,7 @@ void Level1(void) {
             NumControllerExecuted = 0;  // Reset the execution count
         }
 
-        uint8_t ledTick = 0;
 
-        if (ReachedStop) {
-            ledTick++;
-            if(ledTick >= 25){   // 25 * 20ms = 500ms
-                ledTick = 0;
 
-                static uint8_t toggle = 0;
-
-                if(toggle){
-                    LaunchPad_RGB(RED);
-                } else {
-                    LaunchPad_RGB(BLUE);
-                }
-                toggle ^= 1;
-            }
-        }
     }
 }

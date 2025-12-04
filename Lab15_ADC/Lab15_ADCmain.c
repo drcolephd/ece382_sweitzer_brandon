@@ -236,25 +236,6 @@ void Program15_3(void) {
 // =============== Program 15.4 =====================================
 // To test Classify()
 
-scenario_t Classification;
-
-// string representation for LCD display
-char StrScenario[][11] = {  "Error     ",
-                            "L2Close   ",
-                            "R2Close   ",
-                            "RL2Close  ",
-                            "C2Close   ",
-                            "LC2Close  ",
-                            "RC2Close  ",
-                            "RLC2Close ",
-                            "Straight  ",
-                            "LeftTurn  ",
-                            "RightTurn ",
-                            "TeeJoint  ",
-                            "LeftJoint ",
-                            "RightJoint",
-                            "CrossRoad ",
-                            "Blocked   "};
 
 void LCDClear4(void){
 
