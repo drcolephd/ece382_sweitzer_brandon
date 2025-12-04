@@ -284,8 +284,8 @@ void Program13_3(void) {
     }
 
 }
-int main(void){
-//	Program13_1();
+void timers(void){
+	Program13_1();
 //	Program13_2();
-	Program13_3();
+//	Program13_3();
 }

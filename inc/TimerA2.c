@@ -132,3 +132,4 @@ void TA2_0_IRQHandler(void) {
     (*TimerA2Task)();
 
 }
+

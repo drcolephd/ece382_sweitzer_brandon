@@ -74,7 +74,7 @@ policies, either expressed or implied, of the FreeBSD Project.
 #define MINMAX(Min, Max, X) ((X) < (Min) ? (Min) : ((X) > (Max) ? (Max) : (X)))
 
 // PWM parameters for controlling motor speeds.
-#define PWM_AVERAGE 1000                 // Average PWM for balancing
+#define PWM_AVERAGE 900                 // Average PWM for balancing
 #define SWING 300
 #define PWMIN (PWM_AVERAGE - SWING)     // Minimum PWM threshold
 #define PWMAX (PWM_AVERAGE + SWING)     // Maximum PWM threshold

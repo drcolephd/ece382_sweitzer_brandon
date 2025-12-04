@@ -53,6 +53,7 @@ policies, either expressed or implied, of the FreeBSD Project.
 #include "../inc/Nokia5110.h"
 #include "../inc/Tachometer.h"
 #include "../inc/TimerA2.h"
+#include "../inc/TimerA1.h"
 #include "../inc/TA3InputCapture.h"
 #include "../inc/Bump.h"
 #include "../inc/UART0.h"
@@ -69,6 +70,7 @@ policies, either expressed or implied, of the FreeBSD Project.
 #define TACHBUFF_SIZE 10
 uint16_t LeftTachoPeriod[TACHBUFF_SIZE];
 uint16_t RightTachoPeriod[TACHBUFF_SIZE];
+
 
 bool IsCollectionDone = false;
 
@@ -608,6 +610,11 @@ void Program16_2(void){
 // Develop a finite state machine (FSM) to control the robot's movement.
 // The robot moves forward, backward, and makes left or right turns based on bump sensor feedback.
 
+int16_t X_pos_mm = 360;   // starting position
+int16_t Y_pos_mm = 0;
+
+uint16_t deltamm = 0;
+
 typedef enum {
     Stop = 0,      // Stop state
     Forward,       // Move forward
@@ -616,9 +623,20 @@ typedef enum {
     RightTurn      // Turn right
 } state_t;
 
+typedef enum {
+    North,
+    South,
+    East,
+    West
+} face;
+
 static state_t CurrentState = Forward;  // Initial state: Forward
 static state_t NextState = Forward;     // Next state variable
 
+static face faceNow = North;
+static face faceNext = North;
+
+volatile bool ReachedStop = false;
 
 // Structure to define robot movement commands
 typedef struct command {
@@ -628,48 +646,94 @@ typedef struct command {
     int32_t dist_mm;          // Wheel displacement in mm
 } command_t;
 
+
+#define ENDX            0
+#define ENDY            0
 // Control parameters for various states (distances and duty cycles)
 #define FRWD_DIST       700   // Replace this line for forward distance
 #define BKWD_DIST       90   // Replace this line for backward distance
-#define TR90_DIST       111   // Replace this line for 90 degree turn
+#define TR90_DIST       80   // Replace this line for 90 degree turn
 #define TR60_DIST       74   // Replace this line for 60 degree turn
 #define TR30_DIST       37   // Replace this line for 30 degree turn
 
 #define NUM_STATES      5     // Number of robot states
 #define LEN_STR_STATE   5     // String length for state names
 static char strState[NUM_STATES][LEN_STR_STATE] = {"STOP", "FRWD", "BKWD", "LFTR", "RGTR"};  // State names
+static char strFace[4][5] = {"NRTH", "SOUT", "EAST", "WEST"};
 
 // Control commands for each state
 command_t ControlCommands[NUM_STATES] = {
     {0,   0,   &Motor_Stop,        0},          // Stop indefinitely
-    {400, 400, &Motor_Forward,     FRWD_DIST},  // Move forward until bump sensor triggered
+    {600, 635 , &Motor_Forward,     FRWD_DIST},  // Move forward until bump sensor triggered
     {350, 350, &Motor_Backward,    BKWD_DIST},  // Move backward for 90mm
     {350, 350, &Motor_TurnLeft,    0},          // Turn left
     {350, 350, &Motor_TurnRight,   0}           // Turn right
 };
 
 // Clear the LCD and display initial state
+
+
 static void LCDClear3(void) {
     Nokia5110_Clear();                  // Clear the entire display
-    Nokia5110_OutString("Lab13:Timers"); // Display the lab title
-    Nokia5110_SetCursor2(3,1); Nokia5110_OutString("ST: ");  // Show current state
-    Nokia5110_SetCursor2(5, 1); Nokia5110_OutString("D ");   // Show distance traveled
+    //Nokia5110_OutString("Lab13:Timers"); // Display the lab title
+    //Nokia5110_SetCursor2(3,1); Nokia5110_OutString("ST: ");  // Show current state
+    //Nokia5110_SetCursor2(5, 1); Nokia5110_OutString("D ");   // Show distance traveled
 }
 
 // Update the LCD with the current state and motor data
-static void LCDOut3(void) {
-    // Write your code here
-    LCDClear3();
-    Nokia5110_SetCursor2(3,3);
-    Nokia5110_OutString(strState[CurrentState]);
 
-    Nokia5110_SetCursor2(5, 2);
-    Nokia5110_OutUDec(LeftDistance_mm, 5);
-    Nokia5110_OutUDec(RightDistance_mm, 5);
+// This function will be called by ISR
+void Task(void) {
+    LEDOUT ^= 0x01;                 // toggle LED
 }
+
+static void LCDOut3(void) {
+    LCDClear3();
+
+    Nokia5110_SetCursor2(1,1);
+    Nokia5110_OutString("H: ");
+    Nokia5110_OutString(strFace[faceNow]);
+    Nokia5110_OutString(" ");   // pad to clear junk
+
+    // --- X position ---
+    Nokia5110_SetCursor2(2,1);
+    Nokia5110_OutString("X:");
+    Nokia5110_OutString(" ");           // clear field
+    Nokia5110_SetCursor2(2,3);
+    Nokia5110_OutSDec(X_pos_mm, 5);         // signed, width 5
+
+    // --- Y position ---
+    Nokia5110_SetCursor2(3,1);
+    Nokia5110_OutString("Y:");
+    Nokia5110_OutString(" ");
+    Nokia5110_SetCursor2(3,3);
+    Nokia5110_OutSDec(Y_pos_mm, 5);
+
+    // --- Left/Right distances (raw tacho) ---
+    Nokia5110_SetCursor2(4,1);
+    Nokia5110_OutString("L:");
+    Nokia5110_OutString(" ");
+    Nokia5110_SetCursor2(4,3);
+    Nokia5110_OutSDec(LeftDistance_mm, 5);
+
+    Nokia5110_SetCursor2(5,1);
+    Nokia5110_OutString("R:");
+    Nokia5110_OutString(" ");
+    Nokia5110_SetCursor2(5,3);
+    Nokia5110_OutSDec(RightDistance_mm, 5);
+
+    // --- State (for sanity) ---
+    Nokia5110_SetCursor2(6,1);
+    Nokia5110_OutString("ST:");
+    Nokia5110_OutString(" ");
+    Nokia5110_SetCursor2(6,4);
+    Nokia5110_OutString(strState[CurrentState]);
+}
+
 
 // Counter for how many times the controller function has been called
 static uint8_t NumControllerExecuted = 0;  // Updated every 20ms
+
 
 // Main control logic for the robot, executed by the TimerA2 ISR every 20ms
 static void Controller3(void) {
@@ -690,12 +754,45 @@ static void Controller3(void) {
     bumpRead = Bump_Read();  // Read bump sensor status
     Tachometer_GetDistances(&LeftDistance_mm, &RightDistance_mm);  // Get current wheel distances
 
+    static int32_t stateL = 0, stateR = 0;   // reset on state entry
+
+    // compute incremental motion
+    int32_t dL = LeftDistance_mm - stateL;
+    int32_t dR = RightDistance_mm - stateR;
+
+    deltamm = 0.5*(dL + dR);
+
+    // save for next time
+    stateL = LeftDistance_mm;
+    stateR = RightDistance_mm;
+
+
+    switch (faceNow) {
+        case North:
+            Y_pos_mm += deltamm;
+            break;
+        case South:
+            Y_pos_mm -= deltamm;
+            break;
+        case East:
+            X_pos_mm += deltamm;
+            break;
+        case West:
+            X_pos_mm -= deltamm;
+            break;
+    }
+
+    if (faceNow == South && X_pos_mm < 100 && Y_pos_mm < 20 ) {
+        NextState = Stop;
+    }
     switch (CurrentState) {
 
-        case Stop:
+        case Stop: {
             NextState = Stop;
-            break;
+            ReachedStop = true;
+            return;
 
+        }
         case Forward:
             if (bumpRead) { //separate bump conditions from full dist
 
@@ -722,13 +819,30 @@ static void Controller3(void) {
                     NextState = Backward;
                     ControlCommands[LeftTurn].dist_mm = TR90_DIST;
                 }
-            } else if (LeftDistance_mm >= FRWD_DIST) {
-                NextState = Stop;
             }
+
 
             break;
 
         case Backward:
+            switch (faceNow) {
+                case North:
+                    Y_pos_mm -= deltamm;
+                    break;
+
+                case South:
+                    Y_pos_mm += deltamm;
+                    break;
+
+                case East:
+                    X_pos_mm -= deltamm;
+                    break;
+
+                case West:
+                    X_pos_mm += deltamm;
+                    break;
+            }
+
             if (abs(LeftDistance_mm) >= ControlCommands[Backward].dist_mm) {
                 NextState = LeftTurn;
             }
@@ -736,12 +850,47 @@ static void Controller3(void) {
 
         case LeftTurn:
             if (abs(RightDistance_mm) >= ControlCommands[LeftTurn].dist_mm) {
+
+                if (ControlCommands[LeftTurn].dist_mm == TR90_DIST) {
+                    switch (faceNow) {
+                        case North:
+                            faceNext = West;
+                            break;
+                        case South:
+                            faceNext = East;
+                            break;
+                        case East:
+                            faceNext = North;
+                            break;
+                        case West:
+                            faceNext = South;
+                            break;
+                    }
+                }
+
                 NextState = Forward;
             }
             break;
 
         case RightTurn:
             if (abs(LeftDistance_mm) >= ControlCommands[RightTurn].dist_mm) {
+
+                if (ControlCommands[RightTurn].dist_mm == TR90_DIST) {
+                    switch (faceNow) {
+                        case North:
+                            faceNext = East;
+                            break;
+                        case South:
+                            faceNext = West;
+                            break;
+                        case East:
+                            faceNext = South;
+                            break;
+                        case West:
+                            faceNext = North;
+                            break;
+                    }
+                }
                 NextState = Forward;
             }
             break;
@@ -756,11 +905,14 @@ static void Controller3(void) {
         timer_20ms++;  // Stay in current state, increment timer
     } else {
         timer_20ms = 0;  // New state, reset timer and distance measurements
+        stateL = 0;
+        stateR = 0;
         Tachometer_ResetSteps();
     }
 
     // Set the current state to the next state for the next iteration
     CurrentState = NextState;
+    faceNow = faceNext;
 }
 
 // ========== Main Program: Finite State Machine Control ==========
@@ -786,7 +938,7 @@ void Program16_3(void) {
     Tachometer_ResetSteps();  // Reset tachometer distance measurements
 
     // Set the LCD update rate to 10 Hz (update every 5 controller cycles)
-    const uint16_t LcdUpdateRate = 5;    // 50 Hz / 5 = 10 Hz
+    const uint16_t LcdUpdateRate = 25;    // 50 Hz / 5 = 10 Hz
     LCDClear3();  // Clear the LCD and display initial state
 
     EnableInterrupts();  // Enable interrupts
@@ -802,6 +954,25 @@ void Program16_3(void) {
             LCDOut3();  // Output current state and motor data to the LCD
             NumControllerExecuted = 0;  // Reset the execution count
         }
+
+        if (ReachedStop) {
+                static uint16_t blink = 0;
+                blink++;
+
+                if (blink == 10) {      // ~0.5s
+                    LaunchPad_RGB(RED);
+                }
+                if (blink == 20) {      // ~1.0s
+                    LaunchPad_RGB(RGB_OFF);
+                }
+                if (blink == 30) {
+                    LaunchPad_RGB(BLUE);
+                }
+                if (blink == 40) {
+                    LaunchPad_RGB(RGB_OFF);
+                    blink = 0;
+                }
+            }
     }
 }
 
@@ -810,4 +981,7 @@ void main(void){
 //    Program16_1();
     //Program16_2();
     Program16_3();
+
+    BLUELED ^= 0x01;
+    Clock_Delay1ms(200);
 }
